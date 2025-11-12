@@ -49,6 +49,7 @@ description = "Global allowlist"
 paths = [
   '''\.git/''',
   '''\.gitleaks\.toml''',
+  '''README\.md''',
   '''docs/''',
   '''tests/'''
 ]
