@@ -473,6 +473,16 @@ def main():
     print("Aggregating security findings...")
     findings = analyzer.aggregate_findings()
 
+    # Debug: Print what was found
+    print(f"\n=== SCAN RESULTS DEBUG ===")
+    print(f"Gitleaks findings: {len(analyzer.scan_results.get('gitleaks', []))}")
+    print(f"Semgrep findings: {len(analyzer.scan_results.get('semgrep', {}).get('results', []))}")
+    print(f"OPA findings: {len(analyzer.scan_results.get('opa', []))}")
+    print(f"Total issues aggregated: {findings['statistics']['total_issues']}")
+    print(f"Critical: {findings['statistics']['critical_count']}")
+    print(f"High: {findings['statistics']['high_count']}")
+    print(f"=== END DEBUG ===\n")
+
     # Get deployment context
     context = {
         'branch': os.getenv('GITHUB_REF_NAME', 'main'),
