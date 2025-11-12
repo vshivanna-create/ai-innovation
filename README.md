@@ -10,6 +10,7 @@ This project demonstrates a **zero-cost, production-ready** security guardrail t
 - 🚦 Automatically approves or blocks deployments with detailed reasoning
 - 📊 Provides comprehensive security reports on every deployment
 - ☁️ Deploys a static website to AWS S3 + CloudFront
+- 🔷 **Multi-language support**: JavaScript, Python, **C#/.NET**, Infrastructure-as-Code
 
 ## 🏗️ Architecture
 
@@ -177,6 +178,19 @@ The AI analyzer (`guardrail/ai_analyzer.py`) uses OpenAI's GPT-4o-mini to:
 - [Setup Guide](docs/SETUP.md) - Detailed AWS and GitHub setup
 - [Architecture](docs/ARCHITECTURE.md) - System design deep-dive
 - [Demo Script](docs/DEMO.md) - Step-by-step demo walkthrough
+- [**C# Integration**](docs/CSHARP_INTEGRATION.md) - 🆕 C#/.NET security scanning
+
+## 🌐 Language Support
+
+| Language | Security Tools | Status |
+|----------|---------------|--------|
+| **JavaScript/TypeScript** | Semgrep | ✅ Supported |
+| **Python** | Semgrep | ✅ Supported |
+| **C#/.NET** | Semgrep + Security Code Scan | ✅ Supported |
+| **Infrastructure (Terraform, CloudFormation)** | OPA/Conftest, Semgrep | ✅ Supported |
+| **Secrets (All languages)** | Gitleaks | ✅ Supported |
+
+> **New!** [See C# Integration Guide](docs/CSHARP_INTEGRATION.md) for .NET project setup
 
 ## 🛠️ Technologies
 

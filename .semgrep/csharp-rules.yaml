@@ -1,0 +1,144 @@
+# Semgrep C# Security Rules for SecureDeploy Guardrail
+
+rules:
+  # SQL Injection in C#
+  - id: csharp-sql-injection
+    pattern: |
+      new SqlCommand($SQL, ...)
+    message: "Potential SQL injection. Use parameterized queries instead."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+
+  - id: csharp-string-format-sql
+    pattern: |
+      string.Format("SELECT * FROM ... WHERE ... = '{0}'", $VAR)
+    message: "SQL query built with string.Format is vulnerable to injection."
+    severity: ERROR
+    languages: [csharp]
+
+  # Command Injection
+  - id: csharp-command-injection
+    pattern: |
+      Process.Start($CMD)
+    message: "Command injection risk. Validate and sanitize input."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+
+  # Insecure Deserialization
+  - id: csharp-unsafe-deserialization
+    pattern-either:
+      - pattern: |
+          new BinaryFormatter().Deserialize(...)
+      - pattern: |
+          new NetDataContractSerializer().Deserialize(...)
+    message: "Unsafe deserialization can lead to remote code execution."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+
+  # Hardcoded Secrets
+  - id: csharp-hardcoded-password
+    pattern-either:
+      - pattern: |
+          string password = "...";
+      - pattern: |
+          Password = "...";
+    message: "Hardcoded password detected. Use secure configuration."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+
+  # Weak Cryptography
+  - id: csharp-weak-crypto-md5
+    pattern: |
+      MD5.Create()
+    message: "MD5 is cryptographically broken. Use SHA256 or better."
+    severity: WARNING
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-327: Use of a Broken Cryptographic Algorithm"
+
+  - id: csharp-weak-crypto-sha1
+    pattern: |
+      SHA1.Create()
+    message: "SHA1 is deprecated. Use SHA256 or SHA512."
+    severity: WARNING
+    languages: [csharp]
+
+  # Path Traversal
+  - id: csharp-path-traversal
+    pattern: |
+      File.ReadAllText($PATH)
+    message: "Potential path traversal. Validate file paths."
+    severity: WARNING
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-22: Path Traversal"
+
+  # XSS in ASP.NET
+  - id: csharp-aspnet-xss
+    pattern: |
+      @Html.Raw($VAR)
+    message: "Using Html.Raw with user input can lead to XSS."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting"
+
+  # CSRF Token Missing
+  - id: csharp-missing-csrf
+    pattern: |
+      [HttpPost]
+      public ActionResult $METHOD(...)
+      {
+        ...
+      }
+    pattern-not: |
+      [ValidateAntiForgeryToken]
+    message: "POST action missing CSRF protection (ValidateAntiForgeryToken)."
+    severity: WARNING
+    languages: [csharp]
+
+  # Insecure Random
+  - id: csharp-weak-random
+    pattern: |
+      new Random()
+    message: "System.Random is not cryptographically secure. Use RNGCryptoServiceProvider."
+    severity: WARNING
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-330: Use of Insufficiently Random Values"
+
+  # SSL/TLS Validation Disabled
+  - id: csharp-ssl-validation-disabled
+    pattern: |
+      ServicePointManager.ServerCertificateValidationCallback = ...
+    message: "SSL certificate validation is being bypassed. Security risk!"
+    severity: ERROR
+    languages: [csharp]
+
+  # Debug Code Left in Production
+  - id: csharp-debug-leftover
+    pattern-either:
+      - pattern: |
+          #if DEBUG
+      - pattern: |
+          Debugger.Launch()
+    message: "Debug code should not be in production."
+    severity: WARNING
+    languages: [csharp]
+
