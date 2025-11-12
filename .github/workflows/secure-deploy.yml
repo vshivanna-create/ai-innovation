@@ -42,14 +42,13 @@ jobs:
           fi
 
       # Semgrep - Code Security Analysis
+      - name: Setup Semgrep
+        run: pip install semgrep
+
       - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
         continue-on-error: true
-        with:
-          config: .semgrep/rules.yaml
-          output: scan-results/semgrep-report.json
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: |
+          semgrep --config .semgrep/rules.yaml --json --output scan-results/semgrep-report.json . || true
 
       # Ensure Semgrep report exists
       - name: Ensure Semgrep report
