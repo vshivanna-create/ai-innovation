@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered SecureDeploy Guardrail Demo">
+    <title>SecureDeploy Guardrail - AI-Powered Security</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="container">
+                <div class="logo">
+                    <span class="shield">🛡️</span>
+                    <h1>SecureDeploy</h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#security">Security</a></li>
+                    <li><a href="https://github.com/vshivanna-create/ai-innovation" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2>AI-Powered Deployment Security</h2>
+                    <p class="hero-subtitle">Intelligent guardrails that understand context, not just rules</p>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-number">$0</span>
+                            <span class="stat-label">Cost for Demo</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">100%</span>
+                            <span class="stat-label">Automated</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">3</span>
+                            <span class="stat-label">Security Tools</span>
+                        </div>
+                    </div>
+                    <div class="cta-buttons">
+                        <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
+                        <a href="https://github.com/vshivanna-create/ai-innovation" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="deployment-flow">
+                        <div class="flow-step">📝 Code Push</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">🔍 Security Scan</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">🤖 AI Analysis</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step decision">✅ Deploy / ❌ Block</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features">
+            <div class="container">
+                <h2 class="section-title">Key Features</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔐</div>
+                        <h3>Secret Detection</h3>
+                        <p>Gitleaks scans for hardcoded secrets, API keys, and credentials before they reach production.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Code Security</h3>
+                        <p>Semgrep analyzes code for vulnerabilities, injection risks, and security anti-patterns.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📋</div>
+                        <h3>Policy Enforcement</h3>
+                        <p>OPA validates infrastructure against security policies like encryption and access controls.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <h3>AI Decision Engine</h3>
+                        <p>OpenAI interprets findings with context, understanding severity and making intelligent decisions.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Fast & Automated</h3>
+                        <p>Complete security analysis and deployment decision in under 3 minutes, fully automated.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h3>Zero Cost</h3>
+                        <p>Built entirely on free tiers: GitHub Actions, AWS Free Tier, and minimal OpenAI usage.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="how-it-works">
+            <div class="container">
+                <h2 class="section-title">How It Works</h2>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <h3>Push Code</h3>
+                        <p>Developer pushes code to main branch, triggering GitHub Actions workflow automatically.</p>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <h3>Security Scan</h3>
+                        <p>Three tools run in parallel: Gitleaks for secrets, Semgrep for code issues, OPA for policies.</p>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <h3>AI Analysis</h3>
+                        <p>AI aggregates all findings, understands context, and makes an intelligent deploy/block decision.</p>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <h3>Deploy or Block</h3>
+                        <p>If safe, deploys to S3 + CloudFront. If risky, blocks and provides detailed remediation steps.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Tools Section -->
+        <section id="security" class="security-tools">
+            <div class="container">
+                <h2 class="section-title">Security Stack</h2>
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <h3>Gitleaks</h3>
+                        <p class="tool-type">Secret Detection</p>
+                        <ul>
+                            <li>AWS credentials</li>
+                            <li>API keys & tokens</li>
+                            <li>Private keys</li>
+                            <li>Database passwords</li>
+                        </ul>
+                    </div>
+                    <div class="tool-card">
+                        <h3>Semgrep</h3>
+                        <p class="tool-type">Static Analysis</p>
+                        <ul>
+                            <li>XSS vulnerabilities</li>
+                            <li>Code injection</li>
+                            <li>Insecure functions</li>
+                            <li>IaC misconfigurations</li>
+                        </ul>
+                    </div>
+                    <div class="tool-card">
+                        <h3>OPA/Conftest</h3>
+                        <p class="tool-type">Policy as Code</p>
+                        <ul>
+                            <li>Encryption requirements</li>
+                            <li>Access controls</li>
+                            <li>Security headers</li>
+                            <li>Compliance checks</li>
+                        </ul>
+                    </div>
+                    <div class="tool-card">
+                        <h3>OpenAI GPT-4o-mini</h3>
+                        <p class="tool-type">AI Decision Engine</p>
+                        <ul>
+                            <li>Context understanding</li>
+                            <li>Severity assessment</li>
+                            <li>Intelligent decisions</li>
+                            <li>Detailed explanations</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Status Section -->
+        <section class="status">
+            <div class="container">
+                <h2 class="section-title">Deployment Status</h2>
+                <div class="status-card">
+                    <div class="status-indicator">
+                        <div class="pulse-dot"></div>
+                        <span class="status-text">System Active</span>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-item">
+                            <span class="status-label">Last Scan:</span>
+                            <span class="status-value" id="last-scan">Just now</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Security Tools:</span>
+                            <span class="status-value">✅ All Active</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">AI Guardrail:</span>
+                            <span class="status-value">✅ Operational</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Deployment:</span>
+                            <span class="status-value">✅ Ready</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SecureDeploy Guardrail. Built for AI Innovation Sprint.</p>
+            <p class="footer-links">
+                <a href="https://github.com/vshivanna-create/ai-innovation" target="_blank" rel="noopener noreferrer">GitHub</a> •
+                <a href="https://platform.openai.com" target="_blank" rel="noopener noreferrer">OpenAI</a> •
+                <a href="https://aws.amazon.com" target="_blank" rel="noopener noreferrer">AWS</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

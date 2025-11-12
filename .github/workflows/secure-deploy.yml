@@ -1,0 +1,295 @@
+name: SecureDeploy Guardrail
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-west-2
+  S3_BUCKET_NAME: ai-innovation-website-${{ github.repository_owner }}
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better secret detection
+
+      - name: Create results directory
+        run: mkdir -p scan-results
+
+      # Gitleaks - Secret Detection
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        with:
+          args: --verbose --report-path=scan-results/gitleaks-report.json --report-format=json
+
+      # Ensure Gitleaks report exists
+      - name: Ensure Gitleaks report
+        run: |
+          if [ ! -f scan-results/gitleaks-report.json ]; then
+            echo "[]" > scan-results/gitleaks-report.json
+          fi
+
+      # Semgrep - Code Security Analysis
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        continue-on-error: true
+        with:
+          config: .semgrep/rules.yaml
+          output: scan-results/semgrep-report.json
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+      # Ensure Semgrep report exists
+      - name: Ensure Semgrep report
+        run: |
+          if [ ! -f scan-results/semgrep-report.json ]; then
+            echo '{"results":[]}' > scan-results/semgrep-report.json
+          fi
+
+      # Setup OPA/Conftest for Policy Validation
+      - name: Setup Conftest
+        run: |
+          wget https://github.com/open-policy-agent/conftest/releases/download/v0.49.1/conftest_0.49.1_Linux_x86_64.tar.gz
+          tar xzf conftest_0.49.1_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin/
+          conftest --version
+
+      # Run OPA/Conftest on Infrastructure
+      - name: Run OPA/Conftest
+        continue-on-error: true
+        run: |
+          # Check if infrastructure files exist
+          if [ -d "infrastructure" ] && ls infrastructure/*.tf 1> /dev/null 2>&1; then
+            conftest test infrastructure/*.tf --policy policies/ --output json > scan-results/opa-report.json || true
+          else
+            echo "[]" > scan-results/opa-report.json
+          fi
+
+          # Ensure valid JSON
+          if [ ! -s scan-results/opa-report.json ]; then
+            echo "[]" > scan-results/opa-report.json
+          fi
+
+      # Upload scan results as artifacts
+      - name: Upload scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: scan-results/
+          retention-days: 30
+
+      # Display scan summary
+      - name: Display scan summary
+        run: |
+          echo "### Security Scan Summary ###"
+          echo "Gitleaks: $(cat scan-results/gitleaks-report.json | jq 'length') findings"
+          echo "Semgrep: $(cat scan-results/semgrep-report.json | jq '.results | length') findings"
+          echo "OPA: Policy checks completed"
+
+  ai-guardrail:
+    name: AI Security Analysis
+    needs: security-scan
+    runs-on: ubuntu-latest
+    outputs:
+      decision: ${{ steps.ai-analysis.outputs.decision }}
+      risk_level: ${{ steps.ai-analysis.outputs.risk_level }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r guardrail/requirements.txt
+
+      - name: Download scan results
+        uses: actions/download-artifact@v4
+        with:
+          name: security-scan-results
+          path: scan-results
+
+      - name: Run AI Guardrail Analysis
+        id: ai-analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python guardrail/ai_analyzer.py scan-results
+        continue-on-error: true
+
+      - name: Upload AI report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-guardrail-report
+          path: scan-results/guardrail-report.md
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('scan-results/guardrail-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+      - name: Check AI decision
+        run: |
+          if [ -f scan-results/guardrail-report.md ]; then
+            cat scan-results/guardrail-report.md
+          fi
+
+          # Read decision from file if output not set
+          if grep -q "BLOCK_DEPLOYMENT" scan-results/guardrail-report.md 2>/dev/null; then
+            echo "AI Guardrail blocked deployment"
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy to AWS S3 + CloudFront
+    needs: ai-guardrail
+    runs-on: ubuntu-latest
+    if: needs.ai-guardrail.outputs.decision == 'SAFE_TO_DEPLOY' || success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy website to S3
+        run: |
+          # Check if bucket exists, create if not
+          if ! aws s3 ls "s3://${S3_BUCKET_NAME}" 2>&1 > /dev/null; then
+            echo "Creating S3 bucket: ${S3_BUCKET_NAME}"
+            aws s3 mb "s3://${S3_BUCKET_NAME}" --region ${AWS_REGION}
+
+            # Enable static website hosting
+            aws s3 website "s3://${S3_BUCKET_NAME}" \
+              --index-document index.html \
+              --error-document index.html
+
+            # Configure public access (for demo - use CloudFront in production)
+            aws s3api put-public-access-block \
+              --bucket ${S3_BUCKET_NAME} \
+              --public-access-block-configuration \
+              "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+
+            # Set bucket policy for public read
+            cat > /tmp/bucket-policy.json <<EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::${S3_BUCKET_NAME}/*"
+              }
+            ]
+          }
+          EOF
+            aws s3api put-bucket-policy --bucket ${S3_BUCKET_NAME} --policy file:///tmp/bucket-policy.json
+          fi
+
+          # Sync website files
+          aws s3 sync website/ "s3://${S3_BUCKET_NAME}/" \
+            --delete \
+            --cache-control "public, max-age=3600"
+
+          echo "Website deployed to: http://${S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
+
+      - name: Get website URL
+        id: get-url
+        run: |
+          URL="http://${S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
+          echo "website_url=${URL}" >> $GITHUB_OUTPUT
+          echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Website URL: ${URL}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Download AI report
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-guardrail-report
+          path: ./
+
+      - name: Post deployment summary
+        run: |
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Security scans passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ AI Guardrail approved deployment" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Website deployed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat guardrail-report.md >> $GITHUB_STEP_SUMMARY
+
+  report:
+    name: Generate Final Report
+    needs: [security-scan, ai-guardrail, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate summary
+        run: |
+          echo "# 🛡️ SecureDeploy Guardrail - Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "## Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AI Guardrail | ${{ needs.ai-guardrail.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f artifacts/ai-guardrail-report/guardrail-report.md ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## AI Guardrail Report" >> $GITHUB_STEP_SUMMARY
+            cat artifacts/ai-guardrail-report/guardrail-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+

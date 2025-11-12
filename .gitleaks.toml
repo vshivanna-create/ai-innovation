@@ -1,0 +1,67 @@
+# Gitleaks Configuration for SecureDeploy Guardrail
+# Detects secrets, API keys, and credentials in code
+
+title = "SecureDeploy Gitleaks Config"
+
+[extend]
+useDefault = true
+
+# Custom rules for AWS and common secrets
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+tags = ["aws", "credentials"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z\/+]{40}['\"]'''
+tags = ["aws", "credentials"]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''sk-[a-zA-Z0-9]{48}'''
+tags = ["api", "openai"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|api[_-]?secret|access[_-]?token)['"\s:=]+[a-zA-Z0-9\-_]{20,}'''
+tags = ["api", "credentials"]
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA|DSA|EC|OPENSSH|PGP) PRIVATE KEY-----'''
+tags = ["key", "credentials"]
+
+[[rules]]
+id = "github-token"
+description = "GitHub Token"
+regex = '''ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|ghu_[a-zA-Z0-9]{36}|ghs_[a-zA-Z0-9]{36}|ghr_[a-zA-Z0-9]{36}'''
+tags = ["github", "token"]
+
+# Allowlist for false positives
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''\.git/''',
+  '''\.gitleaks\.toml''',
+  '''README\.md''',
+  '''docs/'''
+]
+
+# Ignore test files with dummy credentials
+regexes = [
+  '''EXAMPLE_KEY''',
+  '''YOUR_KEY_HERE''',
+  '''sk-proj-YOUR''',
+  '''AKIA[A-Z0-9]{16}EXAMPLE'''
+]
+
+[allowlist.commits]
+description = "Ignore specific commits"
+# Add commit SHAs to ignore if needed
+

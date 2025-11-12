@@ -1,0 +1,27 @@
+# Conftest configuration for OPA policy testing
+# Used to validate Terraform plans against security policies
+
+[policy]
+# Location of OPA policies
+path = "policies"
+
+# Namespace for policies
+namespace = "main"
+
+# Output format (json for easy parsing by AI)
+output = "json"
+
+# Fail on warnings (set to false for demo to allow warnings)
+fail_on_warn = false
+
+# Parser settings
+[parser]
+# For Terraform files
+terraform = true
+
+# For JSON inputs
+json = true
+
+# For YAML inputs  
+yaml = true
+

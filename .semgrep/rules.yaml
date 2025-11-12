@@ -1,0 +1,165 @@
+# Semgrep Security Rules for SecureDeploy Guardrail
+# JavaScript and Infrastructure security checks
+
+rules:
+  # JavaScript Security Rules
+  - id: js-insecure-random
+    pattern: Math.random()
+    message: "Math.random() is not cryptographically secure. Use crypto.getRandomValues() instead."
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-330: Use of Insufficiently Random Values"
+
+  - id: js-eval-usage
+    pattern: eval(...)
+    message: "eval() is dangerous and can lead to code injection. Avoid using it."
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-95: Code Injection"
+
+  - id: js-document-write
+    pattern: document.write(...)
+    message: "document.write() can be dangerous and lead to XSS. Use safer DOM methods."
+    severity: WARNING
+    languages: [javascript]
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+
+  - id: js-innerhtml-usage
+    pattern: $EL.innerHTML = $VAR
+    message: "Setting innerHTML directly can lead to XSS. Consider using textContent or DOMPurify."
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+
+  - id: js-hardcoded-secret
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const $VAR = "...";
+          - pattern: |
+              var $VAR = "...";
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (password|secret|api[_-]?key|token|access[_-]?key)
+    message: "Possible hardcoded secret detected. Use environment variables instead."
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+
+  # Infrastructure as Code (Terraform) Rules
+  - id: terraform-s3-public-access
+    patterns:
+      - pattern: |
+          resource "aws_s3_bucket_acl" $NAME {
+            ...
+            acl = "public-read"
+            ...
+          }
+    message: "S3 bucket configured with public read access. Ensure this is intentional."
+    severity: ERROR
+    languages: [hcl]
+    metadata:
+      category: security
+      cwe: "CWE-284: Improper Access Control"
+
+  - id: terraform-s3-encryption-missing
+    patterns:
+      - pattern: |
+          resource "aws_s3_bucket" $NAME {
+            ...
+          }
+      - pattern-not: |
+          resource "aws_s3_bucket" $NAME {
+            ...
+            server_side_encryption_configuration {
+              ...
+            }
+            ...
+          }
+    message: "S3 bucket does not have encryption configured. Enable server-side encryption."
+    severity: ERROR
+    languages: [hcl]
+    paths:
+      include:
+        - "*.tf"
+    metadata:
+      category: security
+      cwe: "CWE-311: Missing Encryption"
+
+  - id: terraform-logging-disabled
+    patterns:
+      - pattern: |
+          resource "aws_s3_bucket" $NAME {
+            ...
+          }
+      - pattern-not: |
+          resource "aws_s3_bucket" $NAME {
+            ...
+            logging {
+              ...
+            }
+            ...
+          }
+    message: "S3 bucket does not have logging enabled. Enable access logging for audit trails."
+    severity: WARNING
+    languages: [hcl]
+    paths:
+      include:
+        - "*.tf"
+    metadata:
+      category: security
+      cwe: "CWE-778: Insufficient Logging"
+
+  # HTML Security Rules
+  - id: html-unsafe-target-blank
+    pattern: <a ... target="_blank" ...>
+    pattern-not: <a ... rel="noopener noreferrer" ...>
+    message: "Links with target='_blank' should include rel='noopener noreferrer' for security."
+    severity: WARNING
+    languages: [html]
+    metadata:
+      category: security
+      cwe: "CWE-200: Information Exposure"
+
+  # Python Security Rules (for guardrail script)
+  - id: python-sql-injection
+    pattern: |
+      $CURSOR.execute("..." + $VAR + "...")
+    message: "Possible SQL injection. Use parameterized queries instead."
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+
+  - id: python-hardcoded-temp-dir
+    pattern: |
+      open("/tmp/...")
+    message: "Hardcoded /tmp path may cause issues across platforms. Use tempfile module."
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: best-practice
+
+  - id: python-shell-injection
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.call($CMD, shell=True)
+          - pattern: os.system($CMD)
+    message: "Shell injection risk. Avoid shell=True or use subprocess with argument lists."
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+
