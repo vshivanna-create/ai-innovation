@@ -22,6 +22,6 @@ terraform = true
 # For JSON inputs
 json = true
 
-# For YAML inputs  
+# For YAML inputs
 yaml = true
 
