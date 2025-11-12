@@ -1,0 +1,18 @@
+[33mcommit f9c42d59884df2d2dc0219f3d2f328fae8486a6c[m
+Author: vshivanna <vshivanna.career@gmail.com>
+Date:   Wed Nov 12 14:11:48 2025 -0600
+
+    feat: Add C# project for security scanning
+
+.github/workflows/secure-deploy.yml
+.semgrep/csharp-rules.yaml
+CSHARP_INTEGRATION_SUMMARY.md
+README.md
+TEST_CSHARP_INTEGRATION.sh
+docs/CSHARP_INTEGRATION.md
+docs/CSHARP_QUICK_START.md
+tests/csharp-samples/README.md
+tests/csharp-samples/SecurityTests.csproj
+tests/csharp-samples/VulnerableController.cs
+tests/csharp-samples/WeakCryptoHelper.cs
+tests/csharp-samples/XSSandDeserializationExamples.cs

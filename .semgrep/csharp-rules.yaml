@@ -1,10 +1,13 @@
 # Semgrep C# Security Rules for SecureDeploy Guardrail
 
 rules:
-  # SQL Injection in C# - String Interpolation
-  - id: csharp-sql-injection-interpolation
-    pattern: |
-      $SQL = $"... $VAR ..."
+  # SQL Injection - String interpolation with SQL keywords
+  - id: csharp-sql-string-interpolation
+    patterns:
+      - pattern: $SQL = $"...SELECT...$VAR...";
+      - metavariable-regex:
+          metavariable: $SQL
+          regex: .*sql.*
     message: "Potential SQL injection using string interpolation. Use parameterized queries instead."
     severity: ERROR
     languages: [csharp]
@@ -12,151 +15,159 @@ rules:
       category: security
       cwe: "CWE-89: SQL Injection"
 
-  # SQL Injection - SqlCommand with variable
-  - id: csharp-sql-command-variable
-    pattern-either:
-      - pattern: new SqlCommand($VAR, ...)
-      - pattern: new SqlCommand($VAR)
-    message: "SqlCommand with variable may be SQL injection vulnerable. Ensure parameterized queries are used."
+  # Any string interpolation assigned to variable with 'sql' in name
+  - id: csharp-sql-injection-variable
+    pattern: string $SQL = $"...";
+    metavariable-regex:
+      metavariable: $SQL
+      regex: .*[Ss]ql.*
+    message: "String interpolation used for SQL query. Use parameterized queries to prevent SQL injection."
     severity: WARNING
     languages: [csharp]
     metadata:
       category: security
       cwe: "CWE-89: SQL Injection"
 
-  - id: csharp-string-format-sql
-    pattern: |
-      string.Format("SELECT * FROM ... WHERE ... = '{0}'", $VAR)
-    message: "SQL query built with string.Format is vulnerable to injection."
-    severity: ERROR
-    languages: [csharp]
-
-  # Command Injection
-  - id: csharp-command-injection
-    pattern-either:
-      - pattern: Process.Start($CMD)
-      - pattern: Process.Start($PROG, $ARGS)
-      - pattern: System.Diagnostics.Process.Start($CMD)
-      - pattern: System.Diagnostics.Process.Start($PROG, $ARGS)
-    message: "Command injection risk. Validate and sanitize all inputs before executing commands."
-    severity: ERROR
+  # SqlCommand with non-literal
+  - id: csharp-sqlcommand-variable
+    pattern: new SqlCommand($VAR, ...)
+    message: "SqlCommand with variable string. Ensure you're using parameterized queries, not string concatenation."
+    severity: WARNING
     languages: [csharp]
     metadata:
       category: security
-      cwe: "CWE-78: OS Command Injection"
+      cwe: "CWE-89: SQL Injection"
 
-  # Insecure Deserialization
-  - id: csharp-unsafe-deserialization
-    pattern-either:
-      - pattern: new BinaryFormatter().Deserialize(...)
-      - pattern: BinaryFormatter $FORMATTER = new BinaryFormatter(); ... $FORMATTER.Deserialize(...);
-      - pattern: new NetDataContractSerializer().Deserialize(...)
-    message: "Unsafe deserialization can lead to remote code execution. Use JSON serialization instead."
-    severity: ERROR
-    languages: [csharp]
-    metadata:
-      category: security
-      cwe: "CWE-502: Deserialization of Untrusted Data"
-
-  # Hardcoded Secrets
-  - id: csharp-hardcoded-password
-    pattern-either:
-      - pattern: string password = "...";
-      - pattern: string apiKey = "...";
-      - pattern: string $SECRET = "sk-...";
-      - pattern: Password = "...";
-      - pattern: ApiKey = "...";
-    message: "Hardcoded secret/password detected. Use secure configuration (Azure Key Vault, Environment Variables)."
+  # Hardcoded API keys (sk- prefix)
+  - id: csharp-hardcoded-api-key
+    pattern: string $VAR = "sk-...";
+    message: "Hardcoded API key detected (sk- prefix). Use secure configuration (Azure Key Vault, Environment Variables)."
     severity: ERROR
     languages: [csharp]
     metadata:
       category: security
       cwe: "CWE-798: Use of Hard-coded Credentials"
 
-  # Weak Cryptography
-  - id: csharp-weak-crypto-md5
-    pattern: |
-      MD5.Create()
-    message: "MD5 is cryptographically broken. Use SHA256 or better."
-    severity: WARNING
-    languages: [csharp]
-    metadata:
-      category: security
-      cwe: "CWE-327: Use of a Broken Cryptographic Algorithm"
-
-  - id: csharp-weak-crypto-sha1
-    pattern: |
-      SHA1.Create()
-    message: "SHA1 is deprecated. Use SHA256 or SHA512."
-    severity: WARNING
-    languages: [csharp]
-
-  # Path Traversal
-  - id: csharp-path-traversal
-    pattern-either:
-      - pattern: File.ReadAllText($PATH)
-      - pattern: File.ReadAllLines($PATH)
-      - pattern: File.ReadAllBytes($PATH)
-      - pattern: System.IO.File.ReadAllText($PATH)
-    message: "Potential path traversal. Validate and sanitize file paths before use."
-    severity: WARNING
-    languages: [csharp]
-    metadata:
-      category: security
-      cwe: "CWE-22: Path Traversal"
-
-  # XSS in ASP.NET
-  - id: csharp-aspnet-xss
-    pattern: |
-      @Html.Raw($VAR)
-    message: "Using Html.Raw with user input can lead to XSS."
+  # Hardcoded password/apiKey variables
+  - id: csharp-hardcoded-secrets
+    patterns:
+      - pattern: string $VAR = "...";
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: .*(password|apiKey|apikey|secret|token).*
+    message: "Hardcoded secret/credential detected. Use secure configuration."
     severity: ERROR
     languages: [csharp]
     metadata:
       category: security
-      cwe: "CWE-79: Cross-site Scripting"
+      cwe: "CWE-798: Use of Hard-coded Credentials"
 
-  # CSRF Token Missing
-  - id: csharp-missing-csrf
-    pattern: |
-      [HttpPost]
-      public ActionResult $METHOD(...)
-      {
-        ...
-      }
-    pattern-not: |
-      [ValidateAntiForgeryToken]
-    message: "POST action missing CSRF protection (ValidateAntiForgeryToken)."
+  # Command Injection via Process.Start
+  - id: csharp-process-start-injection
+    pattern-either:
+      - pattern: Process.Start($CMD, ...)
+      - pattern: System.Diagnostics.Process.Start($CMD, ...)
+    message: "Process.Start with variable input. Validate and sanitize all inputs to prevent command injection."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+
+  # Weak Cryptography - MD5
+  - id: csharp-md5-usage
+    pattern-either:
+      - pattern: MD5.Create()
+      - pattern: new MD5CryptoServiceProvider()
+    message: "MD5 is cryptographically broken and should not be used. Use SHA256 or better."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-327: Use of Broken Cryptographic Algorithm"
+
+  # Weak Cryptography - SHA1
+  - id: csharp-sha1-usage
+    pattern-either:
+      - pattern: SHA1.Create()
+      - pattern: new SHA1CryptoServiceProvider()
+    message: "SHA1 is deprecated and vulnerable. Use SHA256, SHA384, or SHA512."
     severity: WARNING
     languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-327: Use of Broken Cryptographic Algorithm"
 
-  # Insecure Random
+  # Insecure Random Number Generator
   - id: csharp-weak-random
-    pattern: |
-      new Random()
-    message: "System.Random is not cryptographically secure. Use RNGCryptoServiceProvider."
+    pattern: new Random()
+    message: "System.Random is not cryptographically secure. Use RNGCryptoServiceProvider or RandomNumberGenerator for security-sensitive operations."
     severity: WARNING
     languages: [csharp]
     metadata:
       category: security
       cwe: "CWE-330: Use of Insufficiently Random Values"
 
-  # SSL/TLS Validation Disabled
-  - id: csharp-ssl-validation-disabled
-    pattern: |
-      ServicePointManager.ServerCertificateValidationCallback = ...
-    message: "SSL certificate validation is being bypassed. Security risk!"
+  # Unsafe Deserialization - BinaryFormatter
+  - id: csharp-binaryformatter-deserialize
+    pattern-either:
+      - pattern: new BinaryFormatter().Deserialize(...)
+      - pattern: $FORMATTER.Deserialize(...)
+    message: "BinaryFormatter deserialization is unsafe and can lead to remote code execution. Use JSON serialization instead."
     severity: ERROR
     languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-502: Deserialization of Untrusted Data"
 
-  # Debug Code Left in Production
-  - id: csharp-debug-leftover
+  # Path Traversal - File operations
+  - id: csharp-file-read-traversal
     pattern-either:
-      - pattern: |
-          #if DEBUG
-      - pattern: |
-          Debugger.Launch()
-    message: "Debug code should not be in production."
+      - pattern: File.ReadAllText($PATH)
+      - pattern: File.ReadAllLines($PATH)
+      - pattern: File.ReadAllBytes($PATH)
+    message: "File read operation with variable path. Validate and sanitize file paths to prevent path traversal attacks."
     severity: WARNING
     languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-22: Path Traversal"
 
+  # SSL Certificate Validation Bypass
+  - id: csharp-ssl-validation-bypass
+    pattern: ServicePointManager.ServerCertificateValidationCallback = ...
+    message: "SSL certificate validation is being modified/bypassed. This is a serious security risk!"
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-295: Certificate Validation"
+
+  # XSS via Html.Raw
+  - id: csharp-htmlraw-xss
+    pattern: Html.Raw($VAR)
+    message: "Html.Raw() with variable input can lead to XSS. Use Html.Encode() or avoid raw HTML output."
+    severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+
+  # Missing CSRF Protection
+  - id: csharp-missing-csrf-token
+    patterns:
+      - pattern: |
+          [HttpPost]
+          public $RET $METHOD(...)
+          {
+            ...
+          }
+      - pattern-not: |
+          [ValidateAntiForgeryToken]
+          ...
+    message: "HTTP POST action without CSRF protection. Add [ValidateAntiForgeryToken] attribute."
+    severity: WARNING
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-352: Cross-Site Request Forgery"
