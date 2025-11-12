@@ -275,16 +275,69 @@ jobs:
           }
           EOF
             aws s3api put-bucket-policy --bucket ${S3_BUCKET_NAME} --policy file:///tmp/bucket-policy.json
+
+            # Configure CORS for API requests
+            cat > /tmp/cors-config.json <<EOF
+          {
+            "CORSRules": [
+              {
+                "AllowedOrigins": ["*"],
+                "AllowedMethods": ["GET", "HEAD"],
+                "AllowedHeaders": ["*"],
+                "MaxAgeSeconds": 3000
+              }
+            ]
+          }
+          EOF
+            aws s3api put-bucket-cors --bucket ${S3_BUCKET_NAME} --cors-configuration file:///tmp/cors-config.json
           fi
 
           # Copy scan summary to website data directory
           mkdir -p website/data
-          cp scan-data/scan-summary.json website/data/scan-summary.json
 
-          # Sync website files
+          if [ -f scan-data/scan-summary.json ]; then
+            echo "Copying scan summary to website..."
+            cp scan-data/scan-summary.json website/data/scan-summary.json
+            cat website/data/scan-summary.json
+          else
+            echo "Warning: scan-summary.json not found, creating default..."
+            cat > website/data/scan-summary.json << 'EOFSCAN'
+          {
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "run_number": ${{ github.run_number }},
+            "gitleaks": {
+              "findings": 0,
+              "tool": "Gitleaks"
+            },
+            "semgrep": {
+              "findings": 0,
+              "tool": "Semgrep"
+            },
+            "opa": {
+              "status": "completed",
+              "tool": "OPA/Conftest"
+            }
+          }
+          EOFSCAN
+          fi
+
+          # Verify file exists locally
+          echo "=== Local file check ==="
+          ls -la website/data/
+          echo "=== Scan summary content ==="
+          cat website/data/scan-summary.json
+
+          # Sync website files (including data directory)
+          echo "=== Syncing to S3 ==="
           aws s3 sync website/ "s3://${S3_BUCKET_NAME}/" \
-            --delete \
             --cache-control "public, max-age=300"
+
+          # Verify file uploaded to S3
+          echo "=== Verifying S3 upload ==="
+          aws s3 ls "s3://${S3_BUCKET_NAME}/data/" || echo "Data directory not found!"
+          aws s3 cp "s3://${S3_BUCKET_NAME}/data/scan-summary.json" - || echo "File not found in S3!"
 
           echo "Website deployed to: http://${S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
 

@@ -62,6 +62,7 @@ logs/
 # Test reports
 reports/
 *.json
+!website/data/scan-summary.json
 *.xml
 
 # OS

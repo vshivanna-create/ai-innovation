@@ -214,17 +214,28 @@ function getTimeAgo(date) {
 async function fetchScanResults() {
     const container = document.getElementById('scan-results-container');
 
-    if (!container) return;
+    console.log('fetchScanResults called');
+    console.log('Container found:', !!container);
+
+    if (!container) {
+        console.error('scan-results-container not found!');
+        return;
+    }
 
     try {
         // Fetch the scan summary JSON from S3
-        const response = await fetch('./data/scan-summary.json?t=' + Date.now());
+        const url = './data/scan-summary.json?t=' + Date.now();
+        console.log('Fetching from:', url);
+
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
-            throw new Error('Failed to fetch scan results');
+            throw new Error(`Failed to fetch scan results: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('Scan data received:', data);
 
         // Display the scan results
         let html = '';
@@ -294,16 +305,21 @@ async function fetchScanResults() {
             </div>
         `;
 
+        console.log('Setting container HTML...');
         container.innerHTML = html;
+        console.log('Scan results displayed successfully!');
 
     } catch (error) {
         console.error('Error fetching scan results:', error);
+        console.log('Attempted to fetch from: ./data/scan-summary.json');
+        console.log('Current URL:', window.location.href);
+
         container.innerHTML = `
             <div class="scan-result-card">
                 <div class="scan-tool-name">ℹ️ Scan Results</div>
-                <div class="scan-label">Awaiting first deployment...</div>
+                <div class="scan-label">Loading scan results...</div>
                 <div class="scan-meta">
-                    Results will appear after the first workflow run
+                    Check browser console for details
                 </div>
             </div>
         `;
