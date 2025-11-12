@@ -1,12 +1,24 @@
 # Semgrep C# Security Rules for SecureDeploy Guardrail
 
 rules:
-  # SQL Injection in C#
-  - id: csharp-sql-injection
+  # SQL Injection in C# - String Interpolation
+  - id: csharp-sql-injection-interpolation
     pattern: |
-      new SqlCommand($SQL, ...)
-    message: "Potential SQL injection. Use parameterized queries instead."
+      $SQL = $"... $VAR ..."
+    message: "Potential SQL injection using string interpolation. Use parameterized queries instead."
     severity: ERROR
+    languages: [csharp]
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+
+  # SQL Injection - SqlCommand with variable
+  - id: csharp-sql-command-variable
+    pattern-either:
+      - pattern: new SqlCommand($VAR, ...)
+      - pattern: new SqlCommand($VAR)
+    message: "SqlCommand with variable may be SQL injection vulnerable. Ensure parameterized queries are used."
+    severity: WARNING
     languages: [csharp]
     metadata:
       category: security
@@ -21,9 +33,12 @@ rules:
 
   # Command Injection
   - id: csharp-command-injection
-    pattern: |
-      Process.Start($CMD)
-    message: "Command injection risk. Validate and sanitize input."
+    pattern-either:
+      - pattern: Process.Start($CMD)
+      - pattern: Process.Start($PROG, $ARGS)
+      - pattern: System.Diagnostics.Process.Start($CMD)
+      - pattern: System.Diagnostics.Process.Start($PROG, $ARGS)
+    message: "Command injection risk. Validate and sanitize all inputs before executing commands."
     severity: ERROR
     languages: [csharp]
     metadata:
@@ -33,11 +48,10 @@ rules:
   # Insecure Deserialization
   - id: csharp-unsafe-deserialization
     pattern-either:
-      - pattern: |
-          new BinaryFormatter().Deserialize(...)
-      - pattern: |
-          new NetDataContractSerializer().Deserialize(...)
-    message: "Unsafe deserialization can lead to remote code execution."
+      - pattern: new BinaryFormatter().Deserialize(...)
+      - pattern: BinaryFormatter $FORMATTER = new BinaryFormatter(); ... $FORMATTER.Deserialize(...);
+      - pattern: new NetDataContractSerializer().Deserialize(...)
+    message: "Unsafe deserialization can lead to remote code execution. Use JSON serialization instead."
     severity: ERROR
     languages: [csharp]
     metadata:
@@ -47,11 +61,12 @@ rules:
   # Hardcoded Secrets
   - id: csharp-hardcoded-password
     pattern-either:
-      - pattern: |
-          string password = "...";
-      - pattern: |
-          Password = "...";
-    message: "Hardcoded password detected. Use secure configuration."
+      - pattern: string password = "...";
+      - pattern: string apiKey = "...";
+      - pattern: string $SECRET = "sk-...";
+      - pattern: Password = "...";
+      - pattern: ApiKey = "...";
+    message: "Hardcoded secret/password detected. Use secure configuration (Azure Key Vault, Environment Variables)."
     severity: ERROR
     languages: [csharp]
     metadata:
@@ -78,9 +93,12 @@ rules:
 
   # Path Traversal
   - id: csharp-path-traversal
-    pattern: |
-      File.ReadAllText($PATH)
-    message: "Potential path traversal. Validate file paths."
+    pattern-either:
+      - pattern: File.ReadAllText($PATH)
+      - pattern: File.ReadAllLines($PATH)
+      - pattern: File.ReadAllBytes($PATH)
+      - pattern: System.IO.File.ReadAllText($PATH)
+    message: "Potential path traversal. Validate and sanitize file paths before use."
     severity: WARNING
     languages: [csharp]
     metadata:

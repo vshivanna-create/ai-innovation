@@ -10,7 +10,7 @@
   <ItemGroup>
     <!-- ASP.NET Core MVC for controller examples -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    
+
     <!-- System libraries for crypto and process examples -->
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
   </ItemGroup>
