@@ -51,20 +51,22 @@ paths = [
   '''\.gitleaks\.toml''',
   '''README\.md''',
   '''docs/''',
-  '''tests/'''
+  '''tests/''',
+  '''QUICKSTART\.md''',
+  '''CONTRIBUTING\.md''',
+  '''DEPLOYMENT_CHECKLIST\.md'''
 ]
 
-# Temporarily disabled to test secret detection
-# regexes = [
-#   '''EXAMPLE_KEY''',
-#   '''YOUR_KEY_HERE''',
-#   '''sk-proj-YOUR''',
-#   '''AKIA[A-Z0-9]{16}EXAMPLE'''
-# ]
+# Ignore common example/placeholder patterns in documentation
+regexes = [
+  '''EXAMPLE''',
+  '''YOUR[_-]?KEY[_-]?HERE''',
+  '''sk-proj-YOUR''',
+  '''placeholder''',
+  '''<YOUR_''',
+  '''\*\*\*\*\*'''
+]
 
-# Allowlist specific commits (add commit SHAs here if needed)
-# [allowlist]
-# commits = [
-#   "commit-sha-here"
-# ]
+# NOTE: test-secret.txt (when added) will NOT be in allowlist
+# This ensures demo secrets are detected properly
 
