@@ -53,9 +53,10 @@ jobs:
         continue-on-error: true
         run: |
           # Scan with all configured rules (includes C# rules)
-          # Use official Semgrep registry for C# + our custom rules
+          # Use official Semgrep registry + our custom C# patterns
           semgrep \
             --config .semgrep/rules.yaml \
+            --config .semgrep/csharp-custom.yaml \
             --config "p/csharp" \
             --config "p/security-audit" \
             --json \

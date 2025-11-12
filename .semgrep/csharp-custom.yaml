@@ -1,0 +1,55 @@
+# Simple, reliable C# security patterns
+# These supplement the official Semgrep registry rules
+
+rules:
+  # Catch any string interpolation with SELECT/INSERT/UPDATE/DELETE
+  - id: csharp-sql-string-interpolation
+    patterns:
+      - pattern-regex: '\$".*SELECT.*"'
+      - pattern-inside: |
+          $VAR = $"...";
+    message: "Potential SQL injection - string interpolation used for SQL query"
+    severity: ERROR
+    languages: [csharp]
+
+  # Catch Process.Start with string concatenation
+  - id: csharp-process-start-command
+    pattern-regex: 'Process\.Start\s*\('
+    message: "Process.Start detected - verify input validation to prevent command injection"
+    severity: WARNING
+    languages: [csharp]
+
+  # Catch MD5/SHA1 usage
+  - id: csharp-md5-create
+    pattern-regex: 'MD5\.Create\s*\('
+    message: "MD5 is cryptographically broken - use SHA256 or better"
+    severity: ERROR
+    languages: [csharp]
+
+  - id: csharp-sha1-create
+    pattern-regex: 'SHA1\.Create\s*\('
+    message: "SHA1 is deprecated - use SHA256 or better"
+    severity: WARNING
+    languages: [csharp]
+
+  # Catch weak Random
+  - id: csharp-insecure-random
+    pattern-regex: 'new\s+Random\s*\('
+    message: "System.Random is not cryptographically secure - use RNGCryptoServiceProvider"
+    severity: WARNING
+    languages: [csharp]
+
+  # Catch BinaryFormatter
+  - id: csharp-binaryformatter
+    pattern-regex: 'BinaryFormatter'
+    message: "BinaryFormatter deserialization is unsafe and can lead to RCE"
+    severity: ERROR
+    languages: [csharp]
+
+  # Catch SSL bypass
+  - id: csharp-ssl-bypass
+    pattern-regex: 'ServerCertificateValidationCallback'
+    message: "SSL certificate validation is being modified - security risk!"
+    severity: ERROR
+    languages: [csharp]
+
