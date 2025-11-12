@@ -51,7 +51,8 @@ paths = [
   '''\.gitleaks\.toml''',
   '''README\.md''',
   '''docs/''',
-  '''tests/''',
+  # NOTE: tests/ removed - we WANT to scan C# samples for demo!
+  # '''tests/''',
   '''QUICKSTART\.md''',
   '''CONTRIBUTING\.md''',
   '''DEPLOYMENT_CHECKLIST\.md'''
@@ -67,6 +68,6 @@ regexes = [
   '''\*\*\*\*\*'''
 ]
 
-# NOTE: test-secret.txt (when added) will NOT be in allowlist
-# This ensures demo secrets are detected properly
+# NOTE: C# samples in tests/csharp-samples/ WILL BE SCANNED
+# This ensures demo vulnerabilities are detected properly
 

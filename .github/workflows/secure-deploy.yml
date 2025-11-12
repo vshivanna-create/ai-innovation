@@ -53,7 +53,14 @@ jobs:
         continue-on-error: true
         run: |
           # Scan with all configured rules (includes C# rules)
-          semgrep --config .semgrep/rules.yaml --config .semgrep/csharp-rules.yaml --json --output scan-results/semgrep-report.json . || true
+          # Use official Semgrep registry for C# + our custom rules
+          semgrep \
+            --config .semgrep/rules.yaml \
+            --config "p/csharp" \
+            --config "p/security-audit" \
+            --json \
+            --output scan-results/semgrep-report.json \
+            . || true
 
       # Ensure Semgrep report exists
       - name: Ensure Semgrep report
