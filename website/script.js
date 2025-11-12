@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add scroll animations
     setupScrollAnimations();
+
+    // Fetch and display GitHub Actions workflow status
+    fetchWorkflowStatus();
+    setInterval(fetchWorkflowStatus, 30000); // Update every 30 seconds
 });
 
 function updateLastScanTime() {
@@ -102,6 +106,105 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// Fetch GitHub Actions workflow status
+async function fetchWorkflowStatus() {
+    const workflowContainer = document.getElementById('workflow-status');
+    const lastScanElement = document.getElementById('last-scan');
+    const deploymentStatusElement = document.getElementById('deployment-status');
+
+    if (!workflowContainer) return;
+
+    try {
+        // GitHub API endpoint for workflow runs
+        const apiUrl = 'https://api.github.com/repos/vshivanna-create/ai-innovation/actions/runs?per_page=3';
+
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch workflow status');
+        }
+
+        const data = await response.json();
+        const runs = data.workflow_runs || [];
+
+        if (runs.length === 0) {
+            workflowContainer.innerHTML = '<div class="loading">No workflow runs found</div>';
+            return;
+        }
+
+        // Display the latest 3 runs
+        let html = '';
+        runs.slice(0, 3).forEach((run, index) => {
+            const statusClass = run.conclusion === 'success' ? 'success' :
+                              run.conclusion === 'failure' ? 'failure' : 'running';
+            const statusIcon = run.conclusion === 'success' ? '✅' :
+                             run.conclusion === 'failure' ? '❌' : '🔄';
+            const statusText = run.conclusion === 'success' ? 'Success' :
+                             run.conclusion === 'failure' ? 'Blocked' : 'Running';
+
+            const runDate = new Date(run.created_at);
+            const timeAgo = getTimeAgo(runDate);
+
+            html += `
+                <div class="workflow-run">
+                    <div class="workflow-info">
+                        <h4>${statusIcon} ${run.display_title || run.head_commit.message}</h4>
+                        <p>${timeAgo} • ${run.head_branch} • #${run.run_number}</p>
+                    </div>
+                    <div class="workflow-status-badge ${statusClass}">
+                        ${statusText}
+                    </div>
+                </div>
+            `;
+
+            // Update last scan time with the most recent run
+            if (index === 0 && lastScanElement) {
+                lastScanElement.textContent = timeAgo;
+
+                // Update deployment status
+                if (deploymentStatusElement) {
+                    if (run.conclusion === 'success') {
+                        deploymentStatusElement.innerHTML = '✅ Deployed';
+                    } else if (run.conclusion === 'failure') {
+                        deploymentStatusElement.innerHTML = '❌ Blocked';
+                    } else {
+                        deploymentStatusElement.innerHTML = '🔄 Running';
+                    }
+                }
+            }
+        });
+
+        workflowContainer.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error fetching workflow status:', error);
+        workflowContainer.innerHTML = '<div class="loading">Unable to load workflow status</div>';
+    }
+}
+
+// Helper function to format time ago
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+
+    const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+    };
+
+    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+            return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+        }
+    }
+
+    return 'Just now';
+}
 
 // Console message for developers
 console.log('%c🛡️ SecureDeploy Guardrail', 'font-size: 20px; font-weight: bold; color: #2563eb;');

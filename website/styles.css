@@ -338,12 +338,27 @@ nav .container {
     background: var(--darker-bg);
 }
 
+.workflow-badge {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.workflow-badge img {
+    height: 32px;
+    border-radius: 4px;
+    transition: transform 0.3s;
+}
+
+.workflow-badge img:hover {
+    transform: scale(1.05);
+}
+
 .status-card {
     background: var(--light-bg);
     border: 1px solid var(--border-color);
     border-radius: 1rem;
     padding: 3rem;
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
 }
 
@@ -400,6 +415,72 @@ nav .container {
 
 .status-value {
     font-weight: 600;
+}
+
+.workflow-status-container {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--dark-bg);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.workflow-status-container .loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.workflow-run {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--light-bg);
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.workflow-run:last-child {
+    margin-bottom: 0;
+}
+
+.workflow-info h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.workflow-info p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.workflow-status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.workflow-status-badge.success {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--success-color);
+}
+
+.workflow-status-badge.failure {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger-color);
+}
+
+.workflow-status-badge.running {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning-color);
+}
+
+.action-buttons {
+    text-align: center;
+    margin-top: 2rem;
 }
 
 /* Footer */

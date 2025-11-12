@@ -186,28 +186,52 @@
         <section class="status">
             <div class="container">
                 <h2 class="section-title">Deployment Status</h2>
+
+                <!-- GitHub Actions Badge -->
+                <div class="workflow-badge">
+                    <a href="https://github.com/vshivanna-create/ai-innovation/actions" target="_blank" rel="noopener noreferrer">
+                        <img src="https://github.com/vshivanna-create/ai-innovation/actions/workflows/secure-deploy.yml/badge.svg" alt="SecureDeploy Guardrail Status">
+                    </a>
+                </div>
+
                 <div class="status-card">
                     <div class="status-indicator">
                         <div class="pulse-dot"></div>
                         <span class="status-text">System Active</span>
                     </div>
+
+                    <!-- Live Workflow Status -->
+                    <div id="workflow-status" class="workflow-status-container">
+                        <div class="loading">Loading latest workflow status...</div>
+                    </div>
+
                     <div class="status-details">
                         <div class="status-item">
                             <span class="status-label">Last Scan:</span>
-                            <span class="status-value" id="last-scan">Just now</span>
+                            <span class="status-value" id="last-scan">Loading...</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">Security Tools:</span>
-                            <span class="status-value">✅ All Active</span>
+                            <span class="status-value">✅ Gitleaks, Semgrep, OPA</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">AI Guardrail:</span>
-                            <span class="status-value">✅ Operational</span>
+                            <span class="status-value">✅ GPT-4o-mini</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">Deployment:</span>
-                            <span class="status-value">✅ Ready</span>
+                            <span class="status-value" id="deployment-status">✅ Ready</span>
                         </div>
+                    </div>
+
+                    <!-- View on GitHub Button -->
+                    <div class="action-buttons">
+                        <a href="https://github.com/vshivanna-create/ai-innovation/actions"
+                           class="btn btn-primary"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            View Full Workflow History →
+                        </a>
                     </div>
                 </div>
             </div>
