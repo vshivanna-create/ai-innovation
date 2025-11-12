@@ -60,7 +60,9 @@ paths = [
 #   '''AKIA[A-Z0-9]{16}EXAMPLE'''
 # ]
 
-[allowlist.commits]
-description = "Ignore specific commits"
-# Add commit SHAs to ignore if needed
+# Allowlist specific commits (add commit SHAs here if needed)
+# [allowlist]
+# commits = [
+#   "commit-sha-here"
+# ]
 

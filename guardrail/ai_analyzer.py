@@ -43,8 +43,10 @@ class SecurityAnalyzer:
             with open(gitleaks_file) as f:
                 content = f.read().strip()
                 self.scan_results['gitleaks'] = json.loads(content) if content else []
+                print(f"DEBUG: Loaded Gitleaks file, {len(self.scan_results['gitleaks'])} findings")
         else:
             self.scan_results['gitleaks'] = []
+            print("DEBUG: Gitleaks report file not found")
 
         # Load Semgrep results
         semgrep_file = results_path / "semgrep-report.json"
@@ -61,8 +63,10 @@ class SecurityAnalyzer:
             with open(opa_file) as f:
                 content = f.read().strip()
                 self.scan_results['opa'] = json.loads(content) if content else []
+                print(f"DEBUG: Loaded OPA file, {len(self.scan_results['opa'])} results")
         else:
             self.scan_results['opa'] = []
+            print("DEBUG: OPA report file not found")
 
     def aggregate_findings(self) -> Dict[str, Any]:
         """
@@ -132,10 +136,12 @@ class SecurityAnalyzer:
         opa_results = self.scan_results.get('opa', [])
         if opa_results:
             findings['statistics']['tools_run'].append('OPA/Conftest')
+            print(f"DEBUG: OPA results structure: {opa_results[:1]}")  # Show first result
             for result in opa_results:
                 # Handle both array of failures and structured results
                 failures = result.get('failures', []) if isinstance(result, dict) else []
                 warnings = result.get('warnings', []) if isinstance(result, dict) else []
+                print(f"DEBUG: Result has {len(failures)} failures, {len(warnings)} warnings")
 
                 for failure in failures:
                     issue = {

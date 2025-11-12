@@ -32,7 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
         with:
-          args: --verbose --report-path=scan-results/gitleaks-report.json --report-format=json
+          args: detect --source . --verbose --report-path=scan-results/gitleaks-report.json --report-format=json --no-git
 
       # Ensure Gitleaks report exists
       - name: Ensure Gitleaks report
