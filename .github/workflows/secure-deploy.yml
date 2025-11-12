@@ -126,13 +126,13 @@ jobs:
       # Display scan summary
       - name: Display scan summary
         run: |
+          GITLEAKS_COUNT=$(cat scan-results/gitleaks-report.json | jq 'length')
+          SEMGREP_COUNT=$(cat scan-results/semgrep-report.json | jq '.results | length')
+
           echo "### Security Scan Summary ###"
           echo "Gitleaks: ${GITLEAKS_COUNT} findings"
           echo "Semgrep: ${SEMGREP_COUNT} findings"
           echo "OPA: Policy checks completed"
-        env:
-          GITLEAKS_COUNT: $(cat scan-results/gitleaks-report.json | jq 'length')
-          SEMGREP_COUNT: $(cat scan-results/semgrep-report.json | jq '.results | length')
 
   ai-guardrail:
     name: AI Security Analysis
