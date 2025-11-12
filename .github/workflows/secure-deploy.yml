@@ -73,15 +73,23 @@ jobs:
         if: hashFiles('**/*.csproj') != ''
         continue-on-error: true
         run: |
+          # Note: Semgrep C# scanning (above) doesn't require compilation
+          # This step provides additional .NET-specific security analysis
+          
           # Install SecurityCodeScan analyzer
           dotnet tool install --global security-scan || true
-
-          # Find all .csproj files and run security analysis
-          find . -name "*.csproj" | while read proj; do
+          
+          # Find all .csproj files (excluding test samples)
+          find . -name "*.csproj" ! -path "*/tests/*" | while read proj; do
             echo "Scanning: $proj"
-            dotnet build "$proj" -c Release /p:RunAnalyzersDuringBuild=true || true
+            dotnet build "$proj" -c Release /p:RunAnalyzersDuringBuild=true 2>&1 || echo "Build warnings/errors logged (non-blocking)"
           done
-
+          
+          # Note: Test sample builds may fail (expected) - they're scanned by Semgrep
+          if [ -f "tests/csharp-samples/SecurityTests.csproj" ]; then
+            echo "Note: Test samples at tests/csharp-samples/ scanned by Semgrep (no build required)"
+          fi
+          
           # Create placeholder for C# scanner results
           echo '{"csharp_scans_completed": true}' > scan-results/csharp-report.json
 

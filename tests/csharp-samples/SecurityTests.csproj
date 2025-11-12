@@ -3,11 +3,16 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Don't fail build on warnings - these are test samples -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Reference ASP.NET Core for the controller examples -->
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <!-- ASP.NET Core MVC for controller examples -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    
+    <!-- System libraries for crypto and process examples -->
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
   </ItemGroup>
 </Project>
 
