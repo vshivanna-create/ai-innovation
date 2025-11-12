@@ -2,7 +2,7 @@
 # Copy this file to terraform.tfvars and update with your values
 
 aws_region        = "us-west-2"
-bucket_name       = "ai-innovation-securedeploy-website"
+bucket_name       = "ai-innovation-website-securedeploy"
 project_name      = "securedeploy-guardrail"
 environment       = "demo"
 github_repository = "vshivanna-create/ai-innovation"

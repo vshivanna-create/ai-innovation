@@ -9,7 +9,7 @@ variable "aws_region" {
 variable "bucket_name" {
   description = "Name of the S3 bucket for website hosting"
   type        = string
-  default     = "ai-innovation-securedeploy-website"
+  default     = "ai-innovation-website-securedeploy"
 }
 
 variable "project_name" {

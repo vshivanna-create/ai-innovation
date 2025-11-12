@@ -9,7 +9,7 @@ on:
 
 env:
   AWS_REGION: us-west-2
-  S3_BUCKET_NAME: ai-innovation-website-${{ github.repository_owner }}
+  S3_BUCKET_NAME: ai-innovation-website-securedeploy
 
 jobs:
   security-scan:
@@ -404,7 +404,6 @@ jobs:
           echo "✅ AI Guardrail approved deployment" >> $GITHUB_STEP_SUMMARY
           echo "✅ Website deployed successfully to S3 + CloudFront" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Website URL:** ${URL}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f guardrail-report.md ]; then
             cat guardrail-report.md >> $GITHUB_STEP_SUMMARY
