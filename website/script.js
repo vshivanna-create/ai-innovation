@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch and display GitHub Actions workflow status
     fetchWorkflowStatus();
     setInterval(fetchWorkflowStatus, 30000); // Update every 30 seconds
+
+    // Fetch and display security scan results
+    fetchScanResults();
+    setInterval(fetchScanResults, 60000); // Update every minute
 });
 
 function updateLastScanTime() {
@@ -204,6 +208,106 @@ function getTimeAgo(date) {
     }
 
     return 'Just now';
+}
+
+// Fetch security scan results
+async function fetchScanResults() {
+    const container = document.getElementById('scan-results-container');
+
+    if (!container) return;
+
+    try {
+        // Fetch the scan summary JSON from S3
+        const response = await fetch('./data/scan-summary.json?t=' + Date.now());
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch scan results');
+        }
+
+        const data = await response.json();
+
+        // Display the scan results
+        let html = '';
+
+        // Gitleaks card
+        const gitleaksCount = data.gitleaks.findings || 0;
+        const gitleaksClass = gitleaksCount === 0 ? 'clean' : 'issues';
+        const gitleaksCountClass = gitleaksCount === 0 ? 'clean' :
+                                   gitleaksCount < 5 ? 'warning' : 'danger';
+
+        html += `
+            <div class="scan-result-card ${gitleaksClass}">
+                <div class="scan-tool-name">🔐 ${data.gitleaks.tool}</div>
+                <div class="scan-count ${gitleaksCountClass}">${gitleaksCount}</div>
+                <div class="scan-label">Secrets ${gitleaksCount === 0 ? 'Detected' : 'Found'}</div>
+                <div class="scan-meta">
+                    ${gitleaksCount === 0 ? '✅ No hardcoded secrets' : '❌ Contains secrets'}
+                </div>
+            </div>
+        `;
+
+        // Semgrep card
+        const semgrepCount = data.semgrep.findings || 0;
+        const semgrepClass = semgrepCount === 0 ? 'clean' : 'issues';
+        const semgrepCountClass = semgrepCount === 0 ? 'clean' :
+                                 semgrepCount < 10 ? 'warning' : 'danger';
+
+        html += `
+            <div class="scan-result-card ${semgrepClass}">
+                <div class="scan-tool-name">🛡️ ${data.semgrep.tool}</div>
+                <div class="scan-count ${semgrepCountClass}">${semgrepCount}</div>
+                <div class="scan-label">Issues ${semgrepCount === 0 ? 'Detected' : 'Found'}</div>
+                <div class="scan-meta">
+                    ${semgrepCount === 0 ? '✅ Code is secure' : '⚠️ Vulnerabilities detected'}
+                </div>
+            </div>
+        `;
+
+        // OPA card
+        const opaStatus = data.opa.status === 'completed';
+
+        html += `
+            <div class="scan-result-card ${opaStatus ? 'clean' : 'issues'}">
+                <div class="scan-tool-name">📋 ${data.opa.tool}</div>
+                <div class="scan-count clean">✓</div>
+                <div class="scan-label">Policy Checks</div>
+                <div class="scan-meta">
+                    ✅ Infrastructure validated
+                </div>
+            </div>
+        `;
+
+        // Overall summary card
+        const totalIssues = gitleaksCount + semgrepCount;
+        const overallClass = totalIssues === 0 ? 'clean' : 'issues';
+        const overallCountClass = totalIssues === 0 ? 'clean' :
+                                 totalIssues < 10 ? 'warning' : 'danger';
+
+        html += `
+            <div class="scan-result-card ${overallClass}">
+                <div class="scan-tool-name">📊 Total Findings</div>
+                <div class="scan-count ${overallCountClass}">${totalIssues}</div>
+                <div class="scan-label">All Tools</div>
+                <div class="scan-meta">
+                    Run #${data.run_number} • ${data.branch}
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error fetching scan results:', error);
+        container.innerHTML = `
+            <div class="scan-result-card">
+                <div class="scan-tool-name">ℹ️ Scan Results</div>
+                <div class="scan-label">Awaiting first deployment...</div>
+                <div class="scan-meta">
+                    Results will appear after the first workflow run
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Console message for developers

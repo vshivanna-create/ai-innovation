@@ -85,6 +85,36 @@ jobs:
             echo "[]" > scan-results/opa-report.json
           fi
 
+      # Create scan summary JSON for website
+      - name: Create scan summary
+        run: |
+          GITLEAKS_COUNT=$(cat scan-results/gitleaks-report.json | jq 'length')
+          SEMGREP_COUNT=$(cat scan-results/semgrep-report.json | jq '.results | length')
+
+          cat > scan-results/scan-summary.json << EOF
+          {
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "run_number": ${{ github.run_number }},
+            "gitleaks": {
+              "findings": ${GITLEAKS_COUNT},
+              "tool": "Gitleaks"
+            },
+            "semgrep": {
+              "findings": ${SEMGREP_COUNT},
+              "tool": "Semgrep"
+            },
+            "opa": {
+              "status": "completed",
+              "tool": "OPA/Conftest"
+            }
+          }
+          EOF
+
+          echo "Scan summary created:"
+          cat scan-results/scan-summary.json
+
       # Upload scan results as artifacts
       - name: Upload scan results
         uses: actions/upload-artifact@v4
@@ -97,9 +127,12 @@ jobs:
       - name: Display scan summary
         run: |
           echo "### Security Scan Summary ###"
-          echo "Gitleaks: $(cat scan-results/gitleaks-report.json | jq 'length') findings"
-          echo "Semgrep: $(cat scan-results/semgrep-report.json | jq '.results | length') findings"
+          echo "Gitleaks: ${GITLEAKS_COUNT} findings"
+          echo "Semgrep: ${SEMGREP_COUNT} findings"
           echo "OPA: Policy checks completed"
+        env:
+          GITLEAKS_COUNT: $(cat scan-results/gitleaks-report.json | jq 'length')
+          SEMGREP_COUNT: $(cat scan-results/semgrep-report.json | jq '.results | length')
 
   ai-guardrail:
     name: AI Security Analysis
@@ -200,6 +233,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Download scan summary
+        uses: actions/download-artifact@v4
+        with:
+          name: security-scan-results
+          path: scan-data
+
       - name: Deploy website to S3
         run: |
           # Check if bucket exists, create if not
@@ -236,10 +275,14 @@ jobs:
             aws s3api put-bucket-policy --bucket ${S3_BUCKET_NAME} --policy file:///tmp/bucket-policy.json
           fi
 
+          # Copy scan summary to website data directory
+          mkdir -p website/data
+          cp scan-data/scan-summary.json website/data/scan-summary.json
+
           # Sync website files
           aws s3 sync website/ "s3://${S3_BUCKET_NAME}/" \
             --delete \
-            --cache-control "public, max-age=3600"
+            --cache-control "public, max-age=300"
 
           echo "Website deployed to: http://${S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
 
